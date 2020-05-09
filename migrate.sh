@@ -75,26 +75,6 @@ action_backupSites() {
 			read dummy
 		fi
 	
-		if [ 0 -eq 1 ]
-		then
-		echo "Backing up database..."
-
-		count=0
-		suffixsuffix=""
-		while [ -d "$dbdir"/"${dbname}${backupsuffix}${suffixsuffix}" ]; do
-			let "count++"
-			suffixsuffix=$(printf "_%04d" $count)
-		done
-
-		backupsuffix=${backupsuffix}${suffixsuffix}
-
-		if ! cp -rip "$dbdir"/"$dbname" "$dbbackups"/"${dbname}$backupsuffix"
-		then
-			echo "Error, aborting."
-			exit 1
-		fi
-		fi
-		
 		(cd "$siteDir"
 		pwd
 		if [ ! -d "$moodledata" ]
