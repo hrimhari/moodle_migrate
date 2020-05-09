@@ -32,7 +32,11 @@ newmoodle="moodle"
 newver=`grep '^[[:space:]]*$release' ${newmoodle}/version.php | cut -d\' -f2 | cut -d\  -f1`
 backupsuffix=".preMoodle-$newver"
 
-backupDb() {
+listFunctions() {
+	declare -F | cut -d\  -f3- | sed -n '/^action_/{s/action_//;p}'
+}
+
+action_backupDb() {
 	dbbkpbase=/var/lib/mysql${backupsuffix}
 	dbbkp="$dbbkpbase".tgz
 	count=0
@@ -52,10 +56,14 @@ backupDb() {
 	service mysql start || exit 1
 }
 
-backupSites() {
+siteNameFromConf() {
+	grep '^ *$CFG->wwwroot' $* | cut -d: -f2- | cut -d/ -f3 | cut -d\' -f1 | cut -d: -f1 | sort -u
+}
+
+action_backupSites() {
 	for siteConfig in ../*/moodle_config.php; do
 		siteDir=$(dirname "$siteConfig")
-		site=$(basename "$siteDir")
+		site=$(siteNamefromConf "$siteConfig")
 	
 		echo -e "***\n*** Backing up ${site}\n***"
 	
@@ -115,7 +123,7 @@ backupSites() {
 	done
 }
 
-customFiles() {
+action_customFiles() {
 	echo "Generating add-on list..."
 	(
 		cd ${moodle}
@@ -152,7 +160,7 @@ $(cat /tmp/diff3.list)
 	exec <&3 3<&-
 }
 
-replaceOld() {
+action_replaceOld() {
 	echo "Replacing old version with new..."
 	read -p "Press <Enter> to continue" line
 	
@@ -175,8 +183,8 @@ replaceOld() {
 	mv "${newmoodle}" "${moodle}"
 }
 
-updateDatabases() {
-	for site in $(grep '^ *$CFG->wwwroot' ../*/moodle_config.php | cut -d: -f2- | cut -d/ -f3 | cut -d\' -f1 | sort -u); do
+action_updateDatabases() {
+	for site in $(siteNameFromConf ../*/moodle_config.php); do
 		echo -e "***\n*** Updating $site\n***"
 		sudo -u www-data HTTP_HOST=$site php ./public_html/admin/cli/upgrade.php --non-interactive
 	done
@@ -186,7 +194,7 @@ skip=0
 count=1
 if [ "$1" = "list" ]; then
 	echo -e "***\n*** Listing functions:"
-	for func in $( declare -F | cut -d\  -f3-); do
+	for func in $(listFunctions); do
 		echo "*** $((count++)): $func"
 	done
 	echo "***"
@@ -226,13 +234,13 @@ if [ "$skip" -lt "5" ]; then
 	read line
 fi
 
-for func in $(declare -F| cut -d\  -f3-); do
+for func in $(listFunctions); do
 	if [ $count -lt $skip ]; then
 		echo "Skipping $func (step $count)..."
 	else
 		echo "Will call $func"
 		read -p "Press <Enter> to continue" line
-		$func
+		action_$func
 	fi
 	let "count++"
 done
