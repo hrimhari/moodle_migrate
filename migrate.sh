@@ -20,7 +20,7 @@
 #   migrate.sh list
 #     List actions.
 #
-#   migrate.sh 5
+#   migrate.sh 6
 #     Skips to action number 5 (updateDb).
 
 
@@ -34,6 +34,39 @@ backupsuffix=".preMoodle-$newver"
 
 listFunctions() {
 	declare -F | cut -d\  -f3- | sed -n '/^action_/{s/action_//;p}'
+}
+
+maintenance() {
+	for site in $(siteNameFromConf ../*/moodle_config.php); do
+		(
+		cd public_html
+		export HTTP_HOST=$site
+		opt=$1
+		shift
+		case "$opt" in
+			'')
+				# Report active (not in maintenance)
+				echo "*** Checking $site ..." >&2
+				php admin/cli/maintenance.php | fgrep -q disabled && echo $site
+				;;
+			*)
+				# Enable/disable maintenance
+				if ! echo " $* " | fgrep -q " $site "; then
+					echo "Skipping $opt for $site ..."
+					continue
+				fi
+				ing=${opt^}
+				ing=${ing/e/ing}
+				echo "*** $ing maintenance for $site ..."
+				php admin/cli/maintenance.php --$opt
+				;;
+		esac
+		)
+	done
+}
+
+action_activateMaintenance() {
+	maintenance enable
 }
 
 action_backupDb() {
@@ -170,6 +203,12 @@ action_updateDatabases() {
 	done
 }
 
+action_zReopenSites() {
+	echo "*** Reopen sites:" $activeSites
+
+	maintenance disable $activeSites
+}
+
 skip=0
 count=1
 if [ "$1" = "list" ]; then
@@ -214,6 +253,10 @@ if [ "$skip" -lt "5" ]; then
 	read line
 fi
 
+export activeSites=$(maintenance)
+
+echo "*** Active sites:" $activeSites
+
 for func in $(listFunctions); do
 	if [ $count -lt $skip ]; then
 		echo "Skipping $func (step $count)..."
@@ -225,4 +268,4 @@ for func in $(listFunctions); do
 	let "count++"
 done
 
-
+maintenance disable $activeSites
