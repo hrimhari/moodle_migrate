@@ -4,10 +4,25 @@
 # - Custom files must be listed under "files_to_port" file.
 # - Old version must be in public_html folder.
 # - New version must be in moodle folder.
-# - Must be run from the parent folder where public_html and moodle lies.
+# - Must be run from the parent folder where public_html and moodle lie.
 #
 # Then all you have to do is run this script and cross your fingers!
 #
+# migrate.sh [option]
+# Options
+#   list: enumerate actions
+#   <action nbr>: skip up to that action number.
+#
+# Examples:
+#   migrate.sh
+#     Runs all actions.
+#
+#   migrate.sh list
+#     List actions.
+#
+#   migrate.sh 5
+#     Skips to action number 5 (updateDb).
+
 
 dbdir="/var/lib/mysql"
 dbbackups="${dbdir}/../mysql_backups"
