@@ -205,6 +205,10 @@ action_updateDatabases() {
 }
 
 action_zReopenSites() {
+	if [[ "${ALL_OPTS##* all *}" == "" ]]; then
+		activeSites="$(siteNameFromConf ../*/moodle_config.php)"
+		echo "*** Got 'all' -- will reopen all sites"
+	fi
 	echo "*** Reopen sites:" $activeSites
 
 	maintenance disable $activeSites
@@ -212,6 +216,8 @@ action_zReopenSites() {
 
 skip=0
 count=1
+export ALL_OPTS=" $* "
+
 if [ "$1" = "list" ]; then
 	echo -e "***\n*** Listing functions:"
 	for func in $(listFunctions); do
