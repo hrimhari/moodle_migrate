@@ -66,7 +66,7 @@ maintenance() {
 }
 
 action_activateMaintenance() {
-	maintenance enable
+	maintenance enable $activeSites 
 }
 
 action_backupDb() {
@@ -96,7 +96,7 @@ siteNameFromConf() {
 action_backupSites() {
 	for siteConfig in ../*/moodle_config.php; do
 		siteDir=$(dirname "$siteConfig")
-		site=$(siteNamefromConf "$siteConfig")
+		site=$(siteNameFromConf "$siteConfig")
 	
 		echo -e "***\n*** Backing up ${site}\n***"
 	
