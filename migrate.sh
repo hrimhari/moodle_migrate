@@ -81,7 +81,7 @@ action_backupDb() {
 		dbbkp="$dbbkpbase"-$(printf "%03d" $count).tgz
 	done
 
-	if ! (cd /var/lib;tar czvf $dbbkp ./mysql); then
+	if ! (cd /var/lib;tar czf $dbbkp ./mysql); then
 		echo "Error, aborting."
 		exit 1
 	fi
@@ -118,15 +118,16 @@ action_backupSites() {
 			echo "Backing up moodledata..."
 
 			suffixsuffix=""
+			extension=".tgz"
 			backupdata="${moodledata}${backupsuffix}"
-			while [ -d "${backupdata}${suffixsuffix}" ]; do
+			while [ -e "${backupdata}${suffixsuffix}${extension}" ]; do
 				let "count++"
 				suffixsuffix=$(printf "_%04d" $count)
 			done
 
-			backupdata="${backupdata}$suffixsuffix"
+			backupdata="${backupdata}$suffixsuffix${extension}"
 
-			if ! cp -rip "$moodledata" "${backupdata}"
+			if ! tar czf "${backupdata}" "$moodledata"
 			then
 				echo "Error, aborting."
 				exit 1
